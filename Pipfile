@@ -4,10 +4,11 @@ verify_ssl = true
 name = "pypi"
 
 [packages]
-django = "*"
+django = {extras = ["bcrypt"], version = "*"}
 djangorestframework = "*"
 django-rest-knox = "*"
 psycopg2 = "*"
+djangorestframework-simplejwt = "*"
 
 [dev-packages]
 
