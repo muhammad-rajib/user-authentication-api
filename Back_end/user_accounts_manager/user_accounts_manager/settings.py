@@ -29,8 +29,8 @@ ALLOWED_HOSTS = []
 
 """
 {
-"email_address":"raj2@gmail.com",
-"user_name":"raj2",
+"email_address":"testmail8521@gmail.com",
+"user_name":"md.rajib",
 "password":"123456",
 "password2":"123456"
 }
@@ -48,13 +48,8 @@ INSTALLED_APPS = [
     'accounts_api',
     'rest_framework',
     'knox',
+    'drf_yasg',
 ]
-
-REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'knox.auth.TokenAuthentication',
-    ]
-}
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -148,10 +143,17 @@ PASSWORD_HASHERS = [
 ]
 
 
+REST_FRAMEWORK = {
+    'NON_FIELD_ERRORS_KEY': 'error',
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    )
+}
+
 # SETTINGS FOR SENDING MAIL
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_USE_TLS = True
 EMAIL_PORT = 587
 EMAIL_HOST_USER = 'testmail8521@gmail.com'
-EMAIL_HOST_PASSWORD = 'developer@123mail'
+EMAIL_HOST_PASSWORD = 'developer@123mail' 
