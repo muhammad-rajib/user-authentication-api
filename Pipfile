@@ -9,6 +9,8 @@ djangorestframework = "*"
 django-rest-knox = "*"
 psycopg2 = "*"
 djangorestframework-simplejwt = "*"
+from = "*"
+drf-yasg = "*"
 
 [dev-packages]
 
