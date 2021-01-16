@@ -4,11 +4,16 @@ from django.conf import settings
 
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from rest_framework import status, views
+from rest_framework import status, views, generics, permissions
 from rest_framework_simplejwt.tokens import RefreshToken
 import jwt
 
-from .serializers import RegistrationSerializer, EmailVerificationSerializer
+from .serializers import (
+    RegistrationSerializer, 
+    EmailVerificationSerializer, 
+    LoginSerializer,
+    LogoutSerializer,
+)
 from .models import registered_accounts
 from .utils import Util
 
@@ -29,22 +34,22 @@ def registration_view(request):
             
             # Send email verification mail to new user
             user_data = serializer.data
-            user = registered_accounts.objects.get(user_name=user_data['user_name'])
+            user = registered_accounts.objects.get(username=user_data['username'])
 
             token = RefreshToken.for_user(user).access_token
             current_site = get_current_site(request).domain
-            #relativeLink = reverse('email-verify')
             absurl = 'http://' + current_site + '/api/v1/accounts/' +'verify-email/' + "?token=" + str(token)
-            email_body = 'Hi ' + user.user_name + '\n' + 'Use this below link to verify your email \n\n' + absurl
-            print(absurl)
+            resend_link = 'http://'+current_site+'/api/v1/accounts/'+'resend-verify-email/'+"?username="+str(user_data['username'])
 
+            email_body = 'Hi ' + user.username + '\n' + 'Use this below link to verify your email \n\n' + absurl + '\n\nUse this below link for resend verification email:\n'+resend_link
+            
             data['email_body'] = email_body
-            data['to_email'] = user.email_address
+            data['to_email'] = user.email
             data['email_subject'] = 'Verify your email' 
             Util.send_mail(data)
 
             response_data['status'] = 'Successfully registration completed.'
-            response_data['user_name'] = user.user_name
+            response_data['username'] = user.username
         else:
             response_data = serializer.errors
         
@@ -71,3 +76,46 @@ class VerifyEmail(views.APIView):
             return Response({'error': 'Activation Expired'}, status=status.HTTP_400_BAD_REQUEST)
         except jwt.exceptions.DecodeError as identifier:
             return Response({'error': 'Invalid token'}, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET',])
+def ResendVerifyEmail(request):
+    if request.method == 'GET':
+        username = request.GET.get('username')
+        user = registered_accounts.objects.get(username=username)
+  
+        token = RefreshToken.for_user(user).access_token
+        current_site = get_current_site(request).domain
+        absurl = 'http://' + current_site + '/api/v1/accounts/' +'verify-email/' + "?token=" + str(token)
+        resend_link = 'http://'+current_site+'/api/v1/accounts/' +'resend-verify-email/'+"?username="+str(username)
+    
+        email_body = 'Hi ' + user.username + '\n' + 'Use this below link to verify your email \n\n' + absurl + '\n\nUse this below link for resend verification email:\n'+resend_link
+                
+        data = {}
+        data['email_body'] = email_body
+        data['to_email'] = user.email
+        data['email_subject'] = 'Resend: Verify your email' 
+        Util.send_mail(data)
+    return Response({'Resend Mail':'Sent to your mail'}, status=status.HTTP_200_OK)
+
+
+class LoginView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class LogoutView(generics.GenericAPIView):
+    serializer_class = LogoutSerializer
+
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
