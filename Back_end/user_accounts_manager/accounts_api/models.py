@@ -41,7 +41,6 @@ class registered_accounts(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
-
     USERNAME_FIELD = 'username'
     REQUIRED_FIELDS = ['email']
 
@@ -49,7 +48,6 @@ class registered_accounts(AbstractBaseUser, PermissionsMixin):
 
     def __str__(self):
         return self.username
-
 
     def tokens(self):
         refresh = RefreshToken.for_user(self)

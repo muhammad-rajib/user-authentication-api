@@ -2,17 +2,20 @@ from django.urls import path
 
 from .views import (
     registration_view, 
-    VerifyEmail, 
-    LoginView, 
+    VerifyEmail,
     ResendVerifyEmail,
+    LoginView,
     LogoutView,
+    ResetPasswordEmail,
+    PasswordTokenCheck,
+    SetNewPassword,
 )
 
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
 
-app_name = 'accounts_api'
+#app_name = 'accounts_api'
 
 urlpatterns = [
     path('register/', registration_view, name='register'),
@@ -21,4 +24,7 @@ urlpatterns = [
     path('user-login/', LoginView.as_view(), name='user-login'),
     path('user/logout/', LogoutView.as_view(), name='logout'),
     path('token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+    path('password-reset-email/', ResetPasswordEmail.as_view(), name='password-reset-email'),
+    path('password-reset/<uidb64>/<token>/', PasswordTokenCheck.as_view(), name='password-reset-confirm'),
+    path('password-reset-complete/', SetNewPassword().as_view(), name='password-reset-complete')
 ]

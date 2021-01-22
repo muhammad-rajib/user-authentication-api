@@ -7,8 +7,11 @@ from django.contrib import auth
 from django.shortcuts import get_object_or_404
 from django.contrib.auth.hashers import make_password, check_password
 from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.utils.encoding import smart_str, force_str, smart_bytes, DjangoUnicodeDecodeError
+from django.contrib.auth.tokens import PasswordResetTokenGenerator
 
 from .models import registered_accounts
+import psycopg2
 
 
 class RegistrationSerializer(serializers.ModelSerializer):
@@ -78,8 +81,10 @@ class LoginSerializer(serializers.ModelSerializer):
             raise AuthenticationFailed('User name or Password not matched, try again')
         
         match_password = user_info.password
+        print(password)
+        print(match_password)
         if not check_password(password, match_password):
-            raise AuthenticationFailed('User name or Password not matched, try again')
+            raise AuthenticationFailed('User name or Password not matched, try again22')
 
         if not user_info.is_email_verified:
             raise AuthenticationFailed('Email is not verified')
@@ -109,4 +114,41 @@ class LogoutSerializer(serializers.Serializer):
             RefreshToken(self.token).blacklist()
         except TokenError:
             self.fail('bad_token')
+
+
+class ResetPasswordEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField(min_length=2)
+    redirect_url = serializers.CharField(max_length=500, required=False)
+
+    class Meta:
+        fields = ['email']
+
+
+class SetNewPasswordSerializer(serializers.Serializer):
+    password = serializers.CharField(min_length=6, max_length=150, write_only=True)
+    token = serializers.CharField(min_length=1, write_only=True)
+    uidb64 = serializers.CharField(min_length=1, write_only=True)
+
+    class Meta:
+        fields = ['password', 'token', 'uidb64']
     
+    def validate(self, attrs):
+        try:
+            password = attrs.get('password')
+            token = attrs.get('token')
+            uidb64 = attrs.get('uidb64')
+
+            id = force_str(urlsafe_base64_decode(uidb64))
+            user = registered_accounts.objects.get(id=id)
+        
+            if not PasswordResetTokenGenerator().check_token(user, token):
+                raise AuthenticationFailed('The reset link is invalid', 401)
+
+            user.set_password(password)
+            user.save()
+
+            return (user)
+
+        except Exception as e:
+            raise AuthenticationFailed('The reset link is invalid33', 401)
+        return super().validate(attrs)
